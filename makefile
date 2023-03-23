@@ -2,7 +2,7 @@ build:
 	poetry build
 
 install:
-	poetry install
+	poetry install --no-root
 
 package-install:
 	python3 -m pip install --user dist/*.whl
