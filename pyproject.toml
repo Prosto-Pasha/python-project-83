@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Pavel Belyavskiy <prostopasha@gmail.com>"]
 readme = "README.md"
-packages = [{include = "python-project-83"}]
+packages = [{include = "page_analyzer"}]
 
 [tool.poetry.dependencies]
 python = "^3.8.1"
