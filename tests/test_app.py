@@ -4,25 +4,25 @@ from page_analyzer.app import app
 # from werkzeug.testapp import test_app
 
 
-@pytest.fixture()
-def app_fixture():
-    app.config.update({"TESTING": True, })
+# @pytest.fixture()
+# def app_fixture():
+#    app.config.update({"TESTING": True, })
 
     # other setup can go here
 
-    yield app
+#    yield app
 
     # clean up / reset resources here
 
 
-@pytest.fixture()
-def client(app_fixture):
-    return app_fixture.test_client()
+#@pytest.fixture()
+#def client(app_fixture):
+#    return app_fixture.test_client()
 
 
-@pytest.fixture()
-def runner(app_fixture):
-    return app_fixture.test_cli_runner()
+#@pytest.fixture()
+#def runner(app_fixture):
+#    return app_fixture.test_cli_runner()
 
 
 # @pytest.fixture()
