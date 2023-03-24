@@ -14,7 +14,7 @@ selfcheck:
 	poetry check
 
 test-coverage:
-	poetry run pytest --cov=gendiff --cov-report xml -vv
+	poetry run pytest --cov=page_analyzer --cov-report xml -vv
 
 lint:
 	poetry run flake8 page_analyzer

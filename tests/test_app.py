@@ -1,5 +1,5 @@
 import pytest
-from page_analyzer.app import app
+from page_analyzer.app import index
 # from werkzeug.test import Client
 # from werkzeug.testapp import test_app
 
@@ -37,4 +37,4 @@ from page_analyzer.app import app
 
 
 def test_test():
-    assert 1 == True
+    assert index() == 'Hello, world!'

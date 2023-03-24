@@ -7,7 +7,7 @@ app.config['SECRET_KEY'] = 'SECRET_KEY'
 
 @app.route('/')
 def index():
-    return "Hello, world!"
+    return 'Hello, world!'
 
 
 if __name__ == '__main__':
