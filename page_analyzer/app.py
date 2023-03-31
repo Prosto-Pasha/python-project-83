@@ -1,4 +1,14 @@
-from flask import Flask
+from flask import (
+    Flask,
+    render_template,
+    # request,
+    # redirect,
+    # url_for,
+    # flash,
+    # get_flashed_messages,
+    # make_response,
+    # session,
+)
 
 
 app = Flask(__name__)
@@ -7,7 +17,13 @@ app.config['SECRET_KEY'] = 'SECRET_KEY'
 
 @app.route('/')
 def index():
-    return 'Hello, world!'
+    errors = {}
+    login = ''
+    return render_template(
+        'index.html',
+        errors=errors,
+        login=login
+    )
 
 
 if __name__ == '__main__':
