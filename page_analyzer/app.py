@@ -171,19 +171,19 @@ def get_urls_data():
     try:
         with conn.cursor() as curs:
             query = '''
-SELECT urls.id AS id,
+SELECT urls.id         AS id,
     urls.NAME          AS NAME,
     checks.check_date  AS check_date,
     checks.status_code AS status_code
 FROM urls
-    JOIN (SELECT url_checks.status_code AS status_code,
-            url_checks2.url_id  AS url_id,
+    LEFT OUTER JOIN (SELECT url_checks.status_code        AS status_code,
+            url_checks2.url_id                            AS url_id,
             To_char(url_checks2.created_at, 'YYYY-MM-DD') AS check_date
         FROM url_checks
             JOIN (SELECT url_checks.url_id AS url_id,
                 Max(url_checks.created_at) AS created_at
             FROM url_checks
-                GROUP  BY url_checks.url_id) AS url_checks2
+                GROUP BY url_checks.url_id) AS url_checks2
                 ON url_checks.url_id = url_checks2.url_id
                 AND url_checks.created_at = url_checks2.created_at) AS checks
     ON urls.id = checks.url_id
