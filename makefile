@@ -21,6 +21,9 @@ lint:
 
 check: selfcheck lint
 
+schema-load:
+	psql database < database.sql
+
 dev:
 	poetry run flask --app page_analyzer:app --debug run
 
