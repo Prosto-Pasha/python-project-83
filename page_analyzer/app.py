@@ -76,38 +76,118 @@ def url_get(id):
     :return: переадресация на страницу checks.html
     """
     url_data = get_url_data(id)
+    url_checks = get_url_checks(id)
     messages = get_flashed_messages(with_categories=True)
     return render_template(
         'checks.html',
         url=url_data,
-        id=id,
         messages=messages,
-        # url_checks=url_checks, # проверки
+        checks=url_checks,
     )
 
 
 @app.route('/urls')
 def urls_get():
+    """
+    Открывает страницу urls.html со списком сайтов
+    :return: страница urls.html
+    """
     urls_data = get_urls_data()
     return render_template('urls.html', urls=urls_data,)
+
+
+@app.route('/urls/<id>/checks', methods=['POST'])
+def check_url(id):
+    """
+    Запускает проверку веб-сайта из таблицы urls с id
+    Результат проверки записывается в таблицу url_checks
+    После этого страница checks.html обновляется
+    :param id: int - id веб-сайта в таблице urls
+    :return: страница checks.html для веб-сайта id
+    """
+    if make_check(id):
+        flash('Страница успешно проверена', 'alert alert-success')
+    else:
+        flash('Произошла ошибка при проверке', 'alert alert-danger')
+    return redirect(url_for('url_get', id=id))
+
+
+def get_url_checks(id):
+    """
+    Возвращает все данные из таблицы url_checks для веб-сайта с id
+    :param id: int - id веб-сайта в таблице urls
+    :return: ? - данные таблицы urls
+    """
+    checks_data = None
+    try:
+        with conn.cursor() as curs:
+            query = '''SELECT id,
+                        status_code,
+                        h1,
+                        title,
+                        description,
+                        to_char(created_at, 'YYYY-MM-DD') AS date_add
+                    FROM url_checks
+                    WHERE url_id=%s
+                    ORDER BY created_at;'''
+            curs.execute(query, (id, ))
+            checks_data = curs.fetchall()
+    except Exception as e:
+        print('WARNING DATABASE: ', e)
+    return checks_data
+
+
+def make_check(id):
+    """
+    Выполняет проверку для веб-сайта из таблицы urls с id
+    При удачной проверке, записывает результат в таблицу url_checks
+    :param id: int - id веб-сайта в таблице urls
+    :return: bool
+        True - проверка прошла успешно
+        False - ошибка при проверке
+    """
+    # TODO Добавить запрос к веб-сайту и
+    #  запись остальных полей из ответа в таблицу url_checks
+    check_data = None
+    try:
+        with conn.cursor() as curs:
+            query = '''INSERT INTO url_checks (url_id, created_at)
+                VALUES (%s, %s)
+                RETURNING id;'''
+            args = (id, datetime.today())
+            curs.execute(query, args)
+            check_data = curs.fetchone()[0]
+    except Exception as e:
+        print('WARNING DATABASE: ', e)
+    return check_data is not None
 
 
 def get_urls_data():
     """
     Возвращает все данные из таблицы urls
-    :return: dict - словарь с данными таблицы urls
+    :return: ? - данные таблицы urls
     """
     urls_data = None
     try:
         with conn.cursor() as curs:
-            # TODO Добавить объединение с таблицей проверок
-            #  и заполнение кода возврата
-            query = "SELECT id," \
-                    " name," \
-                    " to_char(created_at, 'YYYY-MM-DD') AS date_add," \
-                    " 'Код возврата' AS Code" \
-                    " FROM urls" \
-                    " ORDER BY created_at DESC"
+            query = '''
+SELECT urls.id AS id,
+    urls.NAME          AS NAME,
+    checks.check_date  AS check_date,
+    checks.status_code AS status_code
+FROM urls
+    JOIN (SELECT url_checks.status_code AS status_code,
+            url_checks2.url_id  AS url_id,
+            To_char(url_checks2.created_at, 'YYYY-MM-DD') AS check_date
+        FROM url_checks
+            JOIN (SELECT url_checks.url_id AS url_id,
+                Max(url_checks.created_at) AS created_at
+            FROM url_checks
+                GROUP  BY url_checks.url_id) AS url_checks2
+                ON url_checks.url_id = url_checks2.url_id
+                AND url_checks.created_at = url_checks2.created_at) AS checks
+    ON urls.id = checks.url_id
+ORDER BY urls.created_at DESC;'''
             curs.execute(query)
             urls_data = curs.fetchall()
     except Exception as e:
