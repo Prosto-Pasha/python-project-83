@@ -1,20 +1,8 @@
-from flask import (
-    Flask,
-    render_template,
-    request,
-    redirect,
-    url_for,
-    flash,
-    get_flashed_messages,
-    make_response,
-    # session,
-)
-import psycopg2
-import os
+from flask import (Flask, render_template, request, redirect, url_for,
+                   flash, get_flashed_messages, make_response,)
+import psycopg2, os, requests, urllib.parse
 from datetime import datetime
 from dotenv import load_dotenv
-import urllib.parse
-import requests
 from bs4 import BeautifulSoup
 
 # Получаем переменные окружения
@@ -30,8 +18,6 @@ try:
     conn = psycopg2.connect(DATABASE_URL)
     conn.autocommit = True
 except Exception as _ex:
-    # TODO Добавить проверку на существование
-    #  базы "database", и создание, если её нет
     print('[INFO] Error while connecting to database', _ex)
 
 
@@ -45,8 +31,7 @@ def index():
     Выводит начальную страницу
     :return: страница index.html
     """
-    messages = get_flashed_messages()
-    return render_template('index.html', messages=messages)
+    return render_template('index.html', messages=get_flashed_messages())
 
 
 @app.route('/urls', methods=['POST'])
@@ -73,8 +58,7 @@ def urls_post():
 @app.route('/urls/<id>')
 def url_get(id):
     """
-    Открывает страницу checks.html для веб-сайта
-    с id в таблице urls
+    Открывает страницу checks.html для веб-сайта с id в таблице urls
     :return: переадресация на страницу checks.html
     """
     url_data = get_url_data(id)
@@ -94,16 +78,14 @@ def urls_get():
     Открывает страницу urls.html со списком сайтов
     :return: страница urls.html
     """
-    urls_data = get_urls_data()
-    return render_template('urls.html', urls=urls_data,)
+    return render_template('urls.html', urls=get_urls_data(),)
 
 
 @app.route('/urls/<id>/checks', methods=['POST'])
 def check_url(id):
     """
-    Запускает проверку веб-сайта из таблицы urls с id
-    Результат проверки записывается в таблицу url_checks
-    После этого страница checks.html обновляется
+    Запускает проверку веб-сайта из таблицы urls с id. Результат проверки
+    записывается в url_checks. После этого страница checks.html обновляется
     :param id: int - id веб-сайта в таблице urls
     :return: страница checks.html для веб-сайта id
     """
@@ -115,7 +97,7 @@ def get_url_checks(id):
     """
     Возвращает все данные из таблицы url_checks для веб-сайта с id
     :param id: int - id веб-сайта в таблице urls
-    :return: ? - данные таблицы urls
+    :return: - данные таблицы urls
     """
     checks_data = None
     try:
@@ -172,31 +154,21 @@ def make_check(id):
 
 def get_url_request(url):
     """
-    Возвращает нужные данные ответа веб-сайта
-    в виде словаря
+    Возвращает нужные данные ответа веб-сайта в виде словаря
     :param url: str - имя веб-сайта
-    :return: dict или None - словарь с данными ответа на запрос
-        или None, если произошла ошибка
+    :return: dict или None, если произошла ошибка
     """
+    err_class = 'alert alert-danger'
     try:
         answer = requests.get(url)
     except requests.exceptions.Timeout:
-        flash(
-            'Произошла ошибка при проверке (Timeout)',
-            'alert alert-danger'
-        )
+        flash('Произошла ошибка при проверке (Timeout)', err_class)
         return None
     except requests.exceptions.TooManyRedirects:
-        flash(
-            'Произошла ошибка при проверке (Too many redirects)',
-            'alert alert-danger'
-        )
+        flash('Произошла ошибка при проверке (Too many redirects)', err_class)
         return None
     except requests.exceptions.RequestException as e:
-        flash(
-            f'Произошла ошибка при проверке {e}',
-            'alert alert-danger'
-        )
+        flash(f'Произошла ошибка при проверке {e}', err_class)
         return None
     flash('Страница успешно проверена', 'alert alert-success')
     bs_r = get_site_data(answer)
@@ -211,18 +183,15 @@ def get_url_request(url):
 
 def get_site_data(answer):
     """
-    С помощью библиотеки bs4 получаем дополнительную информацию
-    из ответа веб-сайта
+    С библиотекой bs4 получаем дополнительную информацию из ответа веб-сайта
     :param answer: ответ веб-сайта (библиотека requests)
     :return: dict словарь с нужными данными из ответа
     """
     soup = BeautifulSoup(answer.text, "html.parser")
     result = {'h1': '', 'title': '', 'description': ''}
-    h1 = soup.h1
-    if h1 is not None:
-        result['h1'] = h1.text  # .strip()
-    title = soup.title
-    if title is not None:
+    if soup.h1 is not None:
+        result['h1'] = soup.h1.text
+    if soup.title is not None:
         result['title'] = soup.title.string
     description = soup.find("meta", {"name": "description"})
     if description is not None:
@@ -265,8 +234,7 @@ ORDER BY urls.created_at DESC;'''
 
 def get_url_data(id):
     """
-    Возвращает данные веб-сайта из таблицы urls
-    по переданному id
+    Возвращает данные веб-сайта из таблицы urls по переданному id
     :param id: int - id веб-сайта в таблице urls
     :return: dict - словарь с данными веб-сайта
     """
@@ -291,25 +259,21 @@ def get_url_data(id):
 
 def get_parsed_url(url):
     """
-    Возвращает нормализованный адрес веб-сайта
-    Если есть ошибки, то возвращает пустую строку
+    Возвращает нормализованный адрес веб-сайта или пустую строку
     :param url: строка адрес веб-сайта
     :return: строка нормализованный адрес веб-сайта
     """
     parsed_url = urllib.parse.urlparse(url)
     url_scheme = parsed_url[0]
     url_netloc = parsed_url[1].lower().strip()
-    if url_scheme == ''\
-            or url_netloc == ''\
-            or url_netloc.find(' ') > 0:
+    if url_scheme == '' or url_netloc == '' or url_netloc.find(' ') > 0:
         return ''
     return f'{url_scheme}://{url_netloc}'
 
 
 def get_url_name(id):
     """
-    Возвращает имя веб-сайта по его id
-    из таблицы urls
+    Возвращает имя веб-сайта по его id из таблицы urls
     :param id: int - id веб-сайта в таблице urls
     :return: str - name имя веб-сайта в таблице urls
     """
@@ -327,8 +291,7 @@ def get_url_name(id):
 
 def get_url_id(url):
     """
-    Проверяет наличие адреса url в таблице urls
-    При необходимости делает новую запись
+    Проверяет наличие адреса url в таблице urls. Если её нет, добавляет запись
     :param url: строка нормализованный адрес веб-сайта
     :return: url_id: int - id для url в таблице urls
     """
