@@ -8,6 +8,7 @@
 ---
 ### Описание:
 Анализатор страниц – приложение на базе фреймворка Flask. Сайт анализирует указанные страницы на SEO пригодность. Результаты проверок сохраняются в базе данных PostgreSQL.
+
 ---
 ### Links:
 - [Link to the website](https://python-project-83-production-01ef.up.railway.app/)
