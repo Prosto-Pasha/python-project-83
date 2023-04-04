@@ -1,6 +1,9 @@
 from flask import (Flask, render_template, request, redirect, url_for,
                    flash, get_flashed_messages, make_response,)
-import psycopg2, os, requests, urllib.parse
+import psycopg2
+import os
+import requests
+import urllib.parse
 from datetime import datetime
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
