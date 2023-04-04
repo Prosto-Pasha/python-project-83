@@ -14,6 +14,7 @@ import os
 from datetime import datetime
 from dotenv import load_dotenv
 import urllib.parse
+import requests
 
 # Получаем переменные окружения
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -105,10 +106,7 @@ def check_url(id):
     :param id: int - id веб-сайта в таблице urls
     :return: страница checks.html для веб-сайта id
     """
-    if make_check(id):
-        flash('Страница успешно проверена', 'alert alert-success')
-    else:
-        flash('Произошла ошибка при проверке', 'alert alert-danger')
+    make_check(id)
     return redirect(url_for('url_get', id=id))
 
 
@@ -142,24 +140,65 @@ def make_check(id):
     Выполняет проверку для веб-сайта из таблицы urls с id
     При удачной проверке, записывает результат в таблицу url_checks
     :param id: int - id веб-сайта в таблице urls
-    :return: bool
-        True - проверка прошла успешно
-        False - ошибка при проверке
     """
-    # TODO Добавить запрос к веб-сайту и
-    #  запись остальных полей из ответа в таблицу url_checks
+    request_data = get_url_request(get_url_name(id))
     check_data = None
     try:
         with conn.cursor() as curs:
-            query = '''INSERT INTO url_checks (url_id, created_at)
-                VALUES (%s, %s)
+            query = '''INSERT INTO url_checks (
+                    url_id,
+                    status_code,
+                    h1,
+                    title,
+                    description,
+                    created_at)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING id;'''
-            args = (id, datetime.today())
+            args = (
+                id,
+                request_data['status_code'],
+                request_data['h1'],
+                request_data['title'],
+                request_data['description'],
+                datetime.today()
+            )
             curs.execute(query, args)
             check_data = curs.fetchone()[0]
     except Exception as e:
         print('WARNING DATABASE: ', e)
     return check_data is not None
+
+
+def get_url_request(url):
+    """
+    Возвращает нужные данные ответа веб-сайта
+    в виде словаря
+    :param url: str - имя веб-сайта
+    :return: dict или None - словарь с данными ответа на запрос
+        или None, если произошла ошибка
+    """
+    r = None
+    try:
+        r = requests.get(url)
+    except requests.exceptions.Timeout:
+        flash('Произошла ошибка при проверке (Timeout)', 'alert alert-danger')
+        return None
+    except requests.exceptions.TooManyRedirects:
+        flash('Произошла ошибка при проверке (Too many redirects)', 'alert alert-danger')
+        return None
+    except requests.exceptions.RequestException as e:
+        flash(f'Произошла ошибка при проверке {e}', 'alert alert-danger')
+        return None
+    flash('Страница успешно проверена', 'alert alert-success')
+    # TODO Добавить заполнение остальных полей результата проверки
+    #  h1, title, description
+    result = {
+        'status_code': r.status_code,
+        'h1': '',
+        'title': '',
+        'description': ''
+    }
+    return result
 
 
 def get_urls_data():
@@ -236,6 +275,25 @@ def get_parsed_url(url):
             or url_netloc.find(' ') > 0:
         return ''
     return f'{url_scheme}://{url_netloc}'
+
+
+def get_url_name(id):
+    """
+    Возвращает имя веб-сайта по его id
+    из таблицы urls
+    :param id: int - id веб-сайта в таблице urls
+    :return: str - name имя веб-сайта в таблице urls
+    """
+    result = None
+    try:
+        with conn.cursor() as curs:
+            query = 'SELECT name FROM urls WHERE id=%s'
+            args = (id,)
+            curs.execute(query, args)
+            result = curs.fetchone()[0]
+    except Exception as e:
+        print('WARNING DATABASE: ', e)
+    return result
 
 
 def get_url_id(url):
