@@ -37,5 +37,5 @@ from page_analyzer.app import index
 
 
 def test_test():
-    # assert index() == 'Hello, world!'
+    # TODO Нужно добавить тесты
     assert True
