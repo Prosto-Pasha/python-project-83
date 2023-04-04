@@ -181,13 +181,22 @@ def get_url_request(url):
     try:
         r = requests.get(url)
     except requests.exceptions.Timeout:
-        flash('Произошла ошибка при проверке (Timeout)', 'alert alert-danger')
+        flash(
+            'Произошла ошибка при проверке (Timeout)',
+            'alert alert-danger'
+        )
         return None
     except requests.exceptions.TooManyRedirects:
-        flash('Произошла ошибка при проверке (Too many redirects)', 'alert alert-danger')
+        flash(
+            'Произошла ошибка при проверке (Too many redirects)',
+            'alert alert-danger'
+        )
         return None
     except requests.exceptions.RequestException as e:
-        flash(f'Произошла ошибка при проверке {e}', 'alert alert-danger')
+        flash(
+            f'Произошла ошибка при проверке {e}',
+            'alert alert-danger'
+        )
         return None
     flash('Страница успешно проверена', 'alert alert-success')
     # TODO Добавить заполнение остальных полей результата проверки
