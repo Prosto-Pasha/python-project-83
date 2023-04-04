@@ -16,13 +16,14 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # Подключаемся к базе данных
-conn = None
-try:
-    conn = psycopg2.connect(DATABASE_URL)
-    conn.autocommit = True
-except Exception as _ex:
-    print('[INFO] Error while connecting to database', _ex)
-
+# conn = None
+# try:
+conn = psycopg2.connect(DATABASE_URL)
+conn.autocommit = True
+# except Exception as _ex:
+#    # print('[INFO] Error while connecting to database', _ex)
+#    logger.exception("Could not connect to database! %s", _ex)
+#    sys.exit()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
