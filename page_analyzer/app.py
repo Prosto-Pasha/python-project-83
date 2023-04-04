@@ -15,6 +15,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 import urllib.parse
 import requests
+from bs4 import BeautifulSoup
 
 # Получаем переменные окружения
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -177,9 +178,8 @@ def get_url_request(url):
     :return: dict или None - словарь с данными ответа на запрос
         или None, если произошла ошибка
     """
-    r = None
     try:
-        r = requests.get(url)
+        answer = requests.get(url)
     except requests.exceptions.Timeout:
         flash(
             'Произошла ошибка при проверке (Timeout)',
@@ -199,14 +199,34 @@ def get_url_request(url):
         )
         return None
     flash('Страница успешно проверена', 'alert alert-success')
-    # TODO Добавить заполнение остальных полей результата проверки
-    #  h1, title, description
+    bs_r = get_site_data(answer)
     result = {
-        'status_code': r.status_code,
-        'h1': '',
-        'title': '',
-        'description': ''
+        'status_code': answer.status_code,
+        'h1': bs_r['h1'],
+        'title': bs_r['title'],
+        'description': bs_r['description']
     }
+    return result
+
+
+def get_site_data(answer):
+    """
+    С помощью библиотеки bs4 получаем дополнительную информацию
+    из ответа веб-сайта
+    :param answer: ответ веб-сайта (библиотека requests)
+    :return: dict словарь с нужными данными из ответа
+    """
+    soup = BeautifulSoup(answer.text, "html.parser")
+    result = {'h1': '', 'title': '', 'description': ''}
+    h1 = soup.h1
+    if h1 is not None:
+        result['h1'] = h1.text  # .strip()
+    title = soup.title
+    if title is not None:
+        result['title'] = soup.title.string
+    description = soup.find("meta", {"name": "description"})
+    if description is not None:
+        result['description'] = description['content']
     return result
 
 
