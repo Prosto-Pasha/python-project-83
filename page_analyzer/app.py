@@ -106,7 +106,7 @@ def get_url_checks(id):
                         to_char(created_at, 'YYYY-MM-DD') AS date_add
                     FROM url_checks
                     WHERE url_id=%s
-                    ORDER BY created_at;'''
+                    ORDER BY created_at DESC;'''
             curs.execute(query, (id, ))
             checks_data = curs.fetchall()
     except Exception as e:
@@ -158,13 +158,13 @@ def get_url_request(url):
     try:
         answer = requests.get(url)
     except requests.exceptions.Timeout:
-        flash('Произошла ошибка при проверке (Timeout)', err_class)
+        flash('Произошла ошибка при проверке', err_class)  # (Timeout)
         return None
     except requests.exceptions.TooManyRedirects:
-        flash('Произошла ошибка при проверке (Too many redirects)', err_class)
+        flash('Произошла ошибка при проверке', err_class)  # (2 many redirects)
         return None
-    except requests.exceptions.RequestException as e:
-        flash(f'Произошла ошибка при проверке {e}', err_class)
+    except requests.exceptions.RequestException:  # as e
+        flash('Произошла ошибка при проверке', err_class)  # {e}
         return None
     flash('Страница успешно проверена', 'alert alert-success')
     bs_r = get_site_data(answer)
