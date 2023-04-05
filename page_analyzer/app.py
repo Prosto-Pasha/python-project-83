@@ -278,7 +278,8 @@ def get_parsed_url(url):
     parsed_url = urllib.parse.urlparse(url)
     url_scheme = parsed_url[0]
     url_netloc = parsed_url[1].lower().strip()
-    if url_scheme == '' or url_netloc == '' or url_netloc.find(' ') > 0:
+    if url_scheme not in ('http', 'https', 'ftp')\
+            or url_netloc == '' or url_netloc.find(' ') > 0:
         return ''
     return f'{url_scheme}://{url_netloc}'
 
