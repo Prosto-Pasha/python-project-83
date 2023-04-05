@@ -15,7 +15,7 @@ if os.path.exists(dotenv_path):
 DATABASE_URL = os.getenv('DATABASE_URL')
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-# Подключаемся к базе  данных
+# Подключаемся к базе данных
 # conn = None
 # try:
 conn = psycopg2.connect(DATABASE_URL)
