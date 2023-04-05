@@ -53,7 +53,10 @@ def urls_post():
     parsed_url = get_parsed_url(new_url)
     if parsed_url == '':
         flash('Некорректный URL', 'error')
-        response = make_response(redirect(url_for('index')))
+        response = make_response(render_template(
+            'index.html',
+            messages=get_flashed_messages())
+        )
         return response
     url_id = get_url_id(parsed_url)
     response = make_response(redirect(url_for(
