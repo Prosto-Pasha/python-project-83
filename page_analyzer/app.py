@@ -65,9 +65,9 @@ def urls_post():
     # )))
     response = make_response(render_template(
         'checks.html',
-        url=get_url_data(id),
+        url=get_url_data(url_id),
         messages=get_flashed_messages(with_categories=True),
-        checks=get_url_checks(id),
+        checks=get_url_checks(url_id),
     ))
     return response
 
