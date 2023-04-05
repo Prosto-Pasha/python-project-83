@@ -9,21 +9,13 @@ from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 
 # Получаем переменные окружения
-dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
-if os.path.exists(dotenv_path):
-    load_dotenv(dotenv_path)
+load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # Подключаемся к базе данных
-# conn = None
-# try:
 conn = psycopg2.connect(DATABASE_URL)
 conn.autocommit = True
-# except Exception as _ex:
-#    # print('[INFO] Error while connecting to database', _ex)
-#    logger.exception("Could not connect to database! %s", _ex)
-#    sys.exit()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
