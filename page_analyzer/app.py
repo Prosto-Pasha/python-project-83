@@ -1,5 +1,6 @@
 from flask import (Flask, render_template, request, redirect, url_for,
                    flash, get_flashed_messages, make_response,)
+from psycopg2 import OperationalError
 import psycopg2
 import os
 import requests
@@ -14,11 +15,22 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # Подключаемся к базе данных
-conn = psycopg2.connect(DATABASE_URL)
-conn.autocommit = True
+# conn = psycopg2.connect(DATABASE_URL)
+# conn.autocommit = True
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
+
+
+def create_connection():
+    """Возвращает подключение к базе SQL"""
+    connection = None
+    try:
+        connection = psycopg2.connect(DATABASE_URL)
+        connection.autocommit = True
+    except OperationalError as e:
+        print(f"The error '{e}' occurred")
+    return connection
 
 
 @app.route('/')
@@ -97,6 +109,7 @@ def get_url_checks(id):
     """
     checks_data = None
     try:
+        conn = create_connection()
         with conn.cursor() as curs:
             query = '''SELECT id,
                         status_code,
@@ -123,6 +136,7 @@ def make_check(id):
     request_data = get_url_request(get_url_name(id))
     check_data = None
     try:
+        conn = create_connection()
         with conn.cursor() as curs:
             query = '''INSERT INTO url_checks (
                     url_id,
@@ -202,6 +216,7 @@ def get_urls_data():
     """
     urls_data = None
     try:
+        conn = create_connection()
         with conn.cursor() as curs:
             query = '''
 SELECT urls.id         AS id,
@@ -237,6 +252,7 @@ def get_url_data(id):
     url_data = None
     result = {}
     try:
+        conn = create_connection()
         with conn.cursor() as curs:
             query = 'SELECT * FROM urls WHERE id=%s'
             args = (id,)
@@ -275,6 +291,7 @@ def get_url_name(id):
     """
     result = None
     try:
+        conn = create_connection()
         with conn.cursor() as curs:
             query = 'SELECT name FROM urls WHERE id=%s'
             args = (id,)
@@ -293,6 +310,7 @@ def get_url_id(url):
     """
     url_id = None
     try:
+        conn = create_connection()
         with conn.cursor() as curs:
             query = 'SELECT id FROM urls WHERE name=%s'
             args = (url,)
@@ -301,6 +319,7 @@ def get_url_id(url):
     except Exception as e:
         print('WARNING DATABASE: ', e)
     if url_id is None:
+        conn = create_connection()
         with conn.cursor() as curs:
             query = '''INSERT INTO urls (name, created_at)
                 VALUES (%s, %s)
