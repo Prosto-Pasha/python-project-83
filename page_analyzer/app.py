@@ -59,10 +59,16 @@ def urls_post():
         )
         return response
     url_id = get_url_id(parsed_url)
-    response = make_response(redirect(url_for(
-        'url_get',
-        id=url_id
-    )))
+    # response = make_response(redirect(url_for(
+    #    'url_get',
+    #    id=url_id
+    # )))
+    response = make_response(render_template(
+        'checks.html',
+        url=get_url_data(id),
+        messages=get_flashed_messages(with_categories=True),
+        checks=get_url_checks(id),
+    ))
     return response
 
 
@@ -72,14 +78,11 @@ def url_get(id):
     Открывает страницу checks.html для веб-сайта с id в таблице urls
     :return: переадресация на страницу checks.html
     """
-    url_data = get_url_data(id)
-    url_checks = get_url_checks(id)
-    messages = get_flashed_messages(with_categories=True)
     return render_template(
         'checks.html',
-        url=url_data,
-        messages=messages,
-        checks=url_checks,
+        url=get_url_data(id),
+        messages=get_flashed_messages(with_categories=True),
+        checks=get_url_checks(id),
     )
 
 
