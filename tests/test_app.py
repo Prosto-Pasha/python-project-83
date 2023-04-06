@@ -2,6 +2,7 @@
 from page_analyzer.app import app
 from page_analyzer.parse_url import get_parsed_url
 
+
 def test_index_route():
     response = app.test_client().get('/')
     assert response.status_code == 200
