@@ -64,7 +64,7 @@ def urls_post():
 def url_get(id):
     """
     Открывает страницу checks.html для веб-сайта с id в таблице urls
-    :return: переадресация на страницу checks.html
+    :return: страница checks.html
     """
     return render_template(
         'checks.html',
@@ -86,18 +86,35 @@ def urls_get():
 @app.route('/urls/<id>/checks', methods=['POST'])
 def check_url(id):
     """
-    Запускает проверку веб-сайта из таблицы urls с id. Результат проверки
-    записывается в url_checks. После этого страница checks.html обновляется
+    Выполняет проверку для веб-сайта из таблицы urls с id
+    При удачной проверке, записывает результат в таблицу url_checks
     :param id: int - id веб-сайта в таблице urls
     :return: страница checks.html для веб-сайта id
     """
-    status_code = make_check(id)
-    # return render_template(
-    #    'checks.html',
-    #    url=get_url_data(id),
-    #    messages=get_flashed_messages(with_categories=True),
-    #    checks=get_url_checks(id),
-    # ), status_code
+    request_data = get_url_request(get_url_name(id))
+    try:
+        conn = create_connection()
+        with conn.cursor() as curs:
+            status_code = request_data['status_code']
+            query = '''INSERT INTO url_checks (
+                    url_id,
+                    status_code,
+                    h1,
+                    title,
+                    description,
+                    created_at)
+                VALUES (%s, %s, %s, %s, %s, %s);'''
+            args = (
+                id,
+                status_code,
+                request_data['h1'],
+                request_data['title'],
+                request_data['description'],
+                datetime.today()
+            )
+            curs.execute(query, args)
+    except Exception as e:
+        print('WARNING DATABASE: ', e)
     return redirect(url_for('url_get', id=id))
 
 
@@ -127,41 +144,6 @@ def get_url_checks(id):
     return checks_data
 
 
-def make_check(id):
-    """
-    Выполняет проверку для веб-сайта из таблицы urls с id
-    При удачной проверке, записывает результат в таблицу url_checks
-    :param id: int - id веб-сайта в таблице urls
-    :return: status_code - int статус проверки url
-    """
-    request_data = get_url_request(get_url_name(id))
-    try:
-        conn = create_connection()
-        with conn.cursor() as curs:
-            status_code = request_data['status_code']
-            query = '''INSERT INTO url_checks (
-                    url_id,
-                    status_code,
-                    h1,
-                    title,
-                    description,
-                    created_at)
-                VALUES (%s, %s, %s, %s, %s, %s);'''
-            args = (
-                id,
-                status_code,
-                request_data['h1'],
-                request_data['title'],
-                request_data['description'],
-                datetime.today()
-            )
-            curs.execute(query, args)
-    except Exception as e:
-        status_code = 422
-        print('WARNING DATABASE: ', e)
-    return status_code
-
-
 def get_url_request(url):
     """
     Возвращает нужные данные ответа веб-сайта в виде словаря
@@ -171,6 +153,9 @@ def get_url_request(url):
     err_class = 'alert alert-danger'
     try:
         answer = requests.get(url)
+        if answer.status_code != 200:
+            flash('Произошла ошибка при проверке', err_class)
+            return None
     except requests.exceptions.Timeout:
         flash('Произошла ошибка при проверке', err_class)  # (Timeout)
         return None
