@@ -92,12 +92,13 @@ def check_url(id):
     :return: страница checks.html для веб-сайта id
     """
     status_code = make_check(id)
-    return render_template(
-        'checks.html',
-        url=get_url_data(id),
-        messages=get_flashed_messages(with_categories=True),
-        checks=get_url_checks(id),
-    ), status_code
+    # return render_template(
+    #    'checks.html',
+    #    url=get_url_data(id),
+    #    messages=get_flashed_messages(with_categories=True),
+    #    checks=get_url_checks(id),
+    # ), status_code
+    return redirect(url_for('url_get', id=id))
 
 
 def get_url_checks(id):
