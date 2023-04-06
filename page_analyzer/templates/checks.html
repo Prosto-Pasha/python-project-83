@@ -26,8 +26,6 @@
         {% if messages %}
             {% for category, message in messages %}
                 <div class="{{category}}" role="alert">{{ message }}</div>
-                <!-- <div class="alert alert-success" role="alert">{{ message }}</div>
-                <div class="alert alert-info" role="alert">Страница уже существует</div> -->
             {% endfor %}
         {% endif %}
         <main class="flex-grow-1">
