@@ -60,7 +60,7 @@ def urls_post():
         # )
         # return response
         messages = get_flashed_messages()
-        return render_template('index.html',messages=messages), 422
+        return render_template('index.html', messages=messages), 422
     url_id = get_url_id(parsed_url)
     response = make_response(redirect(url_for(
         'url_get',
@@ -100,8 +100,13 @@ def check_url(id):
     :param id: int - id веб-сайта в таблице urls
     :return: страница checks.html для веб-сайта id
     """
-    make_check(id)
-    return redirect(url_for('url_get', id=id))
+    status_code = make_check(id)
+    return render_template(
+        'checks.html',
+        url=get_url_data(id),
+        messages=get_flashed_messages(with_categories=True),
+        checks=get_url_checks(id),
+    ), status_code
 
 
 def get_url_checks(id):
@@ -135,12 +140,13 @@ def make_check(id):
     Выполняет проверку для веб-сайта из таблицы urls с id
     При удачной проверке, записывает результат в таблицу url_checks
     :param id: int - id веб-сайта в таблице urls
+    :return: status_code - int статус проверки url
     """
     request_data = get_url_request(get_url_name(id))
-    check_data = None
     try:
         conn = create_connection()
         with conn.cursor() as curs:
+            status_code = request_data['status_code']
             query = '''INSERT INTO url_checks (
                     url_id,
                     status_code,
@@ -148,21 +154,20 @@ def make_check(id):
                     title,
                     description,
                     created_at)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                RETURNING id;'''
+                VALUES (%s, %s, %s, %s, %s, %s);'''
             args = (
                 id,
-                request_data['status_code'],
+                status_code,
                 request_data['h1'],
                 request_data['title'],
                 request_data['description'],
                 datetime.today()
             )
             curs.execute(query, args)
-            check_data = curs.fetchone()[0]
     except Exception as e:
+        status_code = 422
         print('WARNING DATABASE: ', e)
-    return check_data is not None
+    return status_code
 
 
 def get_url_request(url):
