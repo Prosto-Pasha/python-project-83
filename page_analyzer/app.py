@@ -59,16 +59,10 @@ def urls_post():
         )
         return response
     url_id = get_url_id(parsed_url)
-    # response = make_response(redirect(url_for(
-    #    'url_get',
-    #    id=url_id
-    # )))
-    response = make_response(render_template(
-        'checks.html',
-        url=get_url_data(url_id),
-        messages=get_flashed_messages(with_categories=True),
-        checks=get_url_checks(url_id),
-    ))
+    response = make_response(redirect(url_for(
+        'url_get',
+        id=url_id
+    )))
     return response
 
 
