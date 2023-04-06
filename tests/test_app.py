@@ -1,4 +1,4 @@
-import pytest
+# import pytest
 from page_analyzer.app import app
 
 
