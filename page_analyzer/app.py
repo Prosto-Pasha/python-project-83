@@ -53,20 +53,10 @@ def urls_post():
     parsed_url = get_parsed_url(new_url)
     if parsed_url == '':
         flash('Некорректный URL', 'error')
-        # response = make_response(render_template(
-        #    'index.html',
-        #    messages=get_flashed_messages(),
-        #    code=422)
-        # )
-        # return response
         messages = get_flashed_messages()
         return render_template('index.html', messages=messages), 422
     url_id = get_url_id(parsed_url)
-    response = make_response(redirect(url_for(
-        'url_get',
-        id=url_id
-    ), code=422))
-    # response = make_response(redirect(url_for('users_get'), code=302))
+    response = make_response(redirect(url_for('url_get', id=url_id)))
     return response
 
 
@@ -287,7 +277,9 @@ def get_parsed_url(url):
     parsed_url = urllib.parse.urlparse(url)
     url_scheme = parsed_url[0]
     url_netloc = parsed_url[1].lower().strip()
-    if url_scheme == '' or url_netloc == '' or url_netloc.find(' ') > 0:
+    if url_scheme not in ('http', 'https')\
+            or url_netloc == ''\
+            or url_netloc.find(' ') > 0:
         return ''
     return f'{url_scheme}://{url_netloc}'
 
