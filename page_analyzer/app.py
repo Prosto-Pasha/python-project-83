@@ -4,9 +4,11 @@ import os
 import requests
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
-from parse_url import get_parsed_url
-from manage_db import (get_url_data, get_url_checks, get_urls_data,
-                       put_check, put_url, get_url_id_from_db, get_url_name)
+from page_analyzer.parse_url import get_parsed_url
+from page_analyzer.manage_db import (
+    get_url_data, get_url_checks, get_urls_data, put_check,
+    put_url, get_url_id_from_db, get_url_name
+)
 
 # Получаем переменные окружения
 load_dotenv()

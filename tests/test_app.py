@@ -1,6 +1,6 @@
 # import pytest
 from page_analyzer.app import app
-
+from page_analyzer.parse_url import get_parsed_url
 
 def test_index_route():
     response = app.test_client().get('/')
@@ -10,6 +10,13 @@ def test_index_route():
 def test_urls_route():
     response = app.test_client().get('/urls')
     assert response.status_code == 200
+
+
+def test_get_parsed_url():
+    parsed_url1 = get_parsed_url('HtTp://WwW.GOOGLE.com')
+    parsed_url2 = get_parsed_url('HtTpsss://WwW.GOOGLE.com')
+    assert parsed_url1 == 'http://www.google.com'
+    assert parsed_url2 == ''
 
 
 # from werkzeug.test import Client
