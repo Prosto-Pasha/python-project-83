@@ -65,7 +65,8 @@ def urls_post():
     response = make_response(redirect(url_for(
         'url_get',
         id=url_id
-    )))
+    ), code=422))
+    # response = make_response(redirect(url_for('users_get'), code=302))
     return response
 
 
