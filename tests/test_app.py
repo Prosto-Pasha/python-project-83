@@ -1,5 +1,17 @@
 import pytest
-from page_analyzer.app import index
+from page_analyzer.app import app
+
+
+def test_index_route():
+    response = app.test_client().get('/')
+    assert response.status_code == 200
+
+
+def test_urls_route():
+    response = app.test_client().get('/urls')
+    assert response.status_code == 200
+
+
 # from werkzeug.test import Client
 # from werkzeug.testapp import test_app
 
@@ -15,13 +27,13 @@ from page_analyzer.app import index
     # clean up / reset resources here
 
 
-#@pytest.fixture()
-#def client(app_fixture):
+# @pytest.fixture()
+# def client(app_fixture):
 #    return app_fixture.test_client()
 
 
-#@pytest.fixture()
-#def runner(app_fixture):
+# @pytest.fixture()
+# def runner(app_fixture):
 #    return app_fixture.test_cli_runner()
 
 
