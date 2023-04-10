@@ -1,5 +1,6 @@
 import logging
 import os
+from logging.handlers import RotatingFileHandler
 
 
 LOG_FOLDER = 'log'
@@ -27,7 +28,7 @@ def get_logger(name='log'):
     file_path = os.sep.join([LOG_FOLDER, f'{name}.log'])
     log = logging.getLogger(name)
     log.setLevel(LOGGING_LEVEL)
-    handler = logging.handlers.RotatingFileHandler(
+    handler = RotatingFileHandler(
         file_path,
         mode='a',
         maxBytes=5000,
