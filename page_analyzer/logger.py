@@ -1,11 +1,9 @@
 import logging
 import os
-from logging.handlers import RotatingFileHandler
 
 
 LOG_FOLDER = 'log'
-LOGGING_LEVEL = logging.INFO
-# Debug (10), Info (20), Warning (30), Error (40), Critical (50)
+LOGGING_LEVEL = logging.ERROR  # logging.INFO
 
 
 def create_log_folder(folder=LOG_FOLDER):
