@@ -13,3 +13,4 @@ dist/
 /.env
 /coverage*
 
+/page_analyzer/log/

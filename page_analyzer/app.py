@@ -9,6 +9,8 @@ from page_analyzer.manage_db import (
     get_url_data, get_url_checks, get_urls_data, put_check,
     put_url, get_url_id_from_db, get_url_name
 )
+from page_analyzer.logger import get_logger
+
 
 # Получаем переменные окружения
 load_dotenv()
@@ -18,12 +20,17 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
 
 
+# Логирование
+log = get_logger('app')
+
+
 @app.route('/')
 def index():
     """
     Выводит начальную страницу
     :return: страница index.html
     """
+    log.info('Open index.html')
     return render_template('index.html', messages=get_flashed_messages())
 
 
@@ -35,12 +42,20 @@ def urls_post():
     :return: переадресация на страницу index.html или checks.html
     """
     new_url = request.form['url']
+    log.info(f'Input url {new_url}')
     parsed_url = get_parsed_url(new_url)
+    log.info(f'Parsed url "{parsed_url}"')
     if parsed_url == '':
         flash('Некорректный URL', 'error')
         messages = get_flashed_messages()
         return render_template('index.html', messages=messages), 422
-    url_id = get_url_id(parsed_url)
+    url_id, new_url = get_url_id(parsed_url)
+    if new_url:
+        flash('Страница успешно добавлена', 'alert alert-success')
+        log.info(f'Parsed url {parsed_url} added')
+    else:
+        flash('Страница уже существует', 'alert alert-info')
+        log.info(f'Parsed url {parsed_url} already exist')
     response = make_response(redirect(url_for('url_get', id=url_id)))
     return response
 
@@ -51,6 +66,7 @@ def url_get(id):
     Открывает страницу checks.html для веб-сайта с id в таблице urls
     :return: страница checks.html
     """
+    log.info('Open checks.html')
     return render_template(
         'checks.html',
         url=get_url_data(id),
@@ -65,6 +81,7 @@ def urls_get():
     Открывает страницу urls.html со списком сайтов
     :return: страница urls.html
     """
+    log.info('Open urls.html')
     return render_template('urls.html', urls=get_urls_data(),)
 
 
@@ -77,6 +94,12 @@ def check_url(id):
     :return: страница checks.html для веб-сайта id
     """
     request_data = get_url_request(get_url_name(id))
+    if request_data is None:
+        log.error(f'Error occurred while checking url {get_url_name(id)}')
+        flash('Произошла ошибка при проверке', 'alert alert-danger')
+    else:
+        log.info(f'Url {get_url_name(id)} successfully checked')
+        flash('Страница успешно проверена', 'alert alert-success')
     put_check(id, request_data)
     return redirect(url_for('url_get', id=id))
 
@@ -87,30 +110,21 @@ def get_url_request(url):
     :param url: str - имя веб-сайта
     :return: dict или None, если произошла ошибка
     """
-    err_class = 'alert alert-danger'
     try:
+        log.info(f'Requesting {url} data')
         answer = requests.get(url)
-        if answer.status_code != 200:
-            flash('Произошла ошибка при проверке', err_class)
-            return None
-    except requests.exceptions.Timeout:
-        flash('Произошла ошибка при проверке', err_class)  # (Timeout)
+        answer.raise_for_status()
+        bs_r = get_site_data(answer)
+        result = {
+            'status_code': answer.status_code,
+            'h1': bs_r['h1'],
+            'title': bs_r['title'],
+            'description': bs_r['description']
+        }
+        return result
+    except requests.exceptions.RequestException:
+        log.error(f'Error occurred while getting {url} request')
         return None
-    except requests.exceptions.TooManyRedirects:
-        flash('Произошла ошибка при проверке', err_class)  # (2 many redirects)
-        return None
-    except requests.exceptions.RequestException:  # as e
-        flash('Произошла ошибка при проверке', err_class)  # {e}
-        return None
-    flash('Страница успешно проверена', 'alert alert-success')
-    bs_r = get_site_data(answer)
-    result = {
-        'status_code': answer.status_code,
-        'h1': bs_r['h1'],
-        'title': bs_r['title'],
-        'description': bs_r['description']
-    }
-    return result
 
 
 def get_site_data(answer):
@@ -128,6 +142,7 @@ def get_site_data(answer):
     description = soup.find("meta", {"name": "description"})
     if description is not None:
         result['description'] = description['content']
+    log.info('Getting url data')
     return result
 
 
@@ -135,17 +150,17 @@ def get_url_id(url):
     """
     Проверяет наличие адреса url в таблице urls. Если её нет, добавляет запись
     :param url: строка нормализованный адрес веб-сайта
-    :return: url_id: int - id для url в таблице urls
+    :return: (url_id, new_url): tuple
+        - url_id - int - id для url в таблице urls,
+        - new_url - bool - признак записи нового url
     """
+    log.info(f'Getting {url} id')
     url_id = get_url_id_from_db(url)
     if url_id is None:
-        url_id = put_url(url)
-        if url_id is not None:
-            flash('Страница успешно добавлена', 'alert alert-success')
-    else:
-        flash('Страница уже существует', 'alert alert-info')
-    return url_id
+        return put_url(url), True
+    return url_id, False
 
 
 if __name__ == '__main__':
+    log.info('Starting app...')
     app.run(host='0.0.0.0', port=5000, debug=True)

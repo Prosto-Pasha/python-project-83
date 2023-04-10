@@ -3,20 +3,26 @@ import psycopg2
 import os
 from datetime import datetime
 from dotenv import load_dotenv
+from page_analyzer.logger import get_logger
 
 
 load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 
+# Логирование
+log = get_logger('manage_db')
+
+
 def create_connection():
     """Возвращает подключение к базе PostgreSQL"""
     connection = None
     try:
+        log.info(f'Connected to DB')
         connection = psycopg2.connect(DATABASE_URL)
         connection.autocommit = True
     except OperationalError as e:
-        print(f"The error '{e}' occurred")
+        log.error(f'Error occurred while connecting to DB: {e}')
     return connection
 
 
@@ -41,8 +47,9 @@ def get_url_checks(id):
                     ORDER BY created_at DESC;'''
             curs.execute(query, (id, ))
             checks_data = curs.fetchall()
+            log.info(f'Get check data for url with id={id} from DB')
     except Exception as e:
-        print('WARNING DATABASE: ', e)
+        log.error(f'Error occurred while getting check data for url with id={id} from DB: {e}')
     return checks_data
 
 
@@ -75,8 +82,9 @@ FROM urls
 ORDER BY urls.created_at DESC;'''
             curs.execute(query)
             urls_data = curs.fetchall()
+            log.info(f'Get urls data from DB')
     except Exception as e:
-        print('WARNING DATABASE: ', e)
+        log.error(f'Error occurred while getting urls data from DB: {e}')
     return urls_data
 
 
@@ -95,10 +103,11 @@ def get_url_data(id):
             args = (id,)
             curs.execute(query, args)
             url_data = curs.fetchone()
+            log.info(f'Get data for url with id={id} from DB')
     except Exception as e:
-        print('WARNING DATABASE: ', e)
+        log.error(f'Error occurred while getting data for url with id={id} from DB: {e}')
     if url_data is None:
-        print(f'Не найден url с id={id}!')
+        log.error(f'Url with id={id} did not found in DB')
     else:
         result['id'] = url_data[0]
         result['name'] = url_data[1]
@@ -133,8 +142,9 @@ def put_check(id, request_data):
                 datetime.today()
             )
             curs.execute(query, args)
+            log.info(f'Check data for url with id={id} added in DB')
     except Exception as e:
-        print('WARNING DATABASE: ', e)
+        log.error(f'Error occurred while adding check data for url with id={id} in DB: {e}')
 
 
 def put_url(url):
@@ -152,9 +162,10 @@ def put_url(url):
                 RETURNING id'''
             args = (url, datetime.today())
             curs.execute(query, args)
+            log.info(f'Data for url {url} added in DB')
             return curs.fetchone()[0]
     except Exception as e:
-        print('WARNING DATABASE: ', e)
+        log.error(f'Error occurred while adding data for url {url} in DB: {e}')
         return None
 
 
@@ -171,9 +182,10 @@ def get_url_id_from_db(url):
             query = 'SELECT id FROM urls WHERE name=%s'
             args = (url,)
             curs.execute(query, args)
+            log.info(f'Get id for url {url} from DB')
             return curs.fetchone()[0]
     except Exception as e:
-        print('WARNING DATABASE: ', e)
+        log.error(f'Error occurred while getting id for url {url} from DB: {e}')
         return None
 
 
@@ -191,6 +203,7 @@ def get_url_name(id):
             args = (id,)
             curs.execute(query, args)
             result = curs.fetchone()[0]
+            log.info(f'Get url name for id={id} from DB')
     except Exception as e:
-        print('WARNING DATABASE: ', e)
+        log.error(f'Error occurred while getting url name for id={id} from DB: {e}')
     return result
