@@ -49,8 +49,10 @@ def urls_post():
         flash('Некорректный URL', 'error')
         messages = get_flashed_messages()
         return render_template('index.html', messages=messages), 422
-    url_id, new_url = get_url_id(parsed_url)
-    if new_url:
+    log.info(f'Getting {parsed_url} id')
+    url_id = get_url_id_from_db(parsed_url)
+    if url_id is None:
+        url_id = put_url(parsed_url)
         flash('Страница успешно добавлена', 'alert alert-success')
         log.info(f'Parsed url {parsed_url} added')
     else:
@@ -93,38 +95,27 @@ def check_url(id):
     :param id: int - id веб-сайта в таблице urls
     :return: страница checks.html для веб-сайта id
     """
-    request_data = get_url_request(get_url_name(id))
-    if request_data is None:
-        log.error(f'Error occurred while checking url {get_url_name(id)}')
-        flash('Произошла ошибка при проверке', 'alert alert-danger')
-    else:
-        log.info(f'Url {get_url_name(id)} successfully checked')
-        flash('Страница успешно проверена', 'alert alert-success')
-    put_check(id, request_data)
-    return redirect(url_for('url_get', id=id))
-
-
-def get_url_request(url):
-    """
-    Возвращает нужные данные ответа веб-сайта в виде словаря
-    :param url: str - имя веб-сайта
-    :return: dict или None, если произошла ошибка
-    """
+    request_data = None
+    url = get_url_name(id)
     try:
         log.info(f'Requesting {url} data')
         answer = requests.get(url)
         answer.raise_for_status()
         bs_r = get_site_data(answer)
-        result = {
-            'status_code': answer.status_code,
-            'h1': bs_r['h1'],
-            'title': bs_r['title'],
-            'description': bs_r['description']
-        }
-        return result
+        request_data = (
+            id,
+            answer.status_code,
+            bs_r['h1'],
+            bs_r['title'],
+            bs_r['description']
+        )
+        put_check(request_data)
+        log.info(f'Url {get_url_name(id)} successfully checked')
+        flash('Страница успешно проверена', 'alert alert-success')
     except requests.exceptions.RequestException:
-        log.error(f'Error occurred while getting {url} request')
-        return None
+        log.error(f'Error occurred while checking {url}')
+        flash('Произошла ошибка при проверке', 'alert alert-danger')
+    return redirect(url_for('url_get', id=id))
 
 
 def get_site_data(answer):
@@ -144,21 +135,6 @@ def get_site_data(answer):
         result['description'] = description['content']
     log.info('Getting url data')
     return result
-
-
-def get_url_id(url):
-    """
-    Проверяет наличие адреса url в таблице urls. Если её нет, добавляет запись
-    :param url: строка нормализованный адрес веб-сайта
-    :return: (url_id, new_url): tuple
-        - url_id - int - id для url в таблице urls,
-        - new_url - bool - признак записи нового url
-    """
-    log.info(f'Getting {url} id')
-    url_id = get_url_id_from_db(url)
-    if url_id is None:
-        return put_url(url), True
-    return url_id, False
 
 
 if __name__ == '__main__':

@@ -117,11 +117,10 @@ def get_url_data(id):
     return result
 
 
-def put_check(id, request_data):
+def put_check(request_data):
     """
     Записывает результат проверки веб-сайта в таблицу url_checks
-    :param id: int - id проверенного веб-сайта
-    :param request_data: dict - результаты проверки веб-сайта
+    :param request_data: tuple - результаты проверки веб-сайта
     :return:
     """
     try:
@@ -135,19 +134,12 @@ def put_check(id, request_data):
                     description,
                     created_at)
                 VALUES (%s, %s, %s, %s, %s, %s);'''
-            args = (
-                id,
-                request_data['status_code'],
-                request_data['h1'],
-                request_data['title'],
-                request_data['description'],
-                datetime.today()
-            )
+            args = (*request_data, datetime.today())
             curs.execute(query, args)
-            log.info(f'Check data for url with id={id} added in DB')
+            log.info('Check data added in DB')
     except Exception as e:
         log.error(f'Error occurred while adding check data'
-                  f' for url with id={id} in DB: {e}')
+                  f' {request_data} in DB: {e}')
 
 
 def put_url(url):
