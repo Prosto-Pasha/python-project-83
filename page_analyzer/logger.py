@@ -7,6 +7,11 @@ LOGGING_LEVEL = logging.ERROR  # logging.INFO
 
 
 def create_log_folder(folder=LOG_FOLDER):
+    """
+    Создаёт (при необходимости) каталог LOG_FOLDER
+    :param folder:
+    :return:
+    """
     if not os.path.exists(folder):
         os.mkdir(folder)
 
